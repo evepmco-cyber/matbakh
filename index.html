@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#4f6b2c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="مطبخ البيت">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font-size:14px}img{max-width:100%}[hidden]{display:none!important}</style>
+<title>مطبخ البيت الصحي</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@500;700&family=IBM+Plex+Sans+Arabic:wght@400;500;600&display=swap">
+<style>
+/* Layout: dashboard band on top, tabs + filters, card grid; tapping a card opens a recipe sheet */
+:root{
+  --bg:#f5f6f0; --surface:#ffffff; --ink:#1f2a1c; --muted:#5f6b58; --line:#dfe3d6;
+  --olive:#4f6b2c; --olive-soft:#e7eedb; --saffron:#d99a1e; --sumac:#a3392f; --water:#2f6f8f;
+  --display:"Readex Pro","IBM Plex Sans Arabic",Tahoma,sans-serif;
+  --body:"IBM Plex Sans Arabic",Tahoma,Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#141a12; --surface:#1d2519; --ink:#e9eee2; --muted:#a3ae99; --line:#2f3a29;
+  --olive:#9cc06a; --olive-soft:#26331d; --saffron:#f0b54a; --sumac:#e0776b; --water:#6fb3d4; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141a12; --surface:#1d2519; --ink:#e9eee2; --muted:#a3ae99; --line:#2f3a29;
+  --olive:#9cc06a; --olive-soft:#26331d; --saffron:#f0b54a; --sumac:#e0776b; --water:#6fb3d4; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.6}
+.wrap{max-width:1040px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px;display:flex;flex-direction:column;gap:20px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0}
+h1{font-size:1.65rem}
+.sub{color:var(--muted);margin:4px 0 0}
+.num{font-variant-numeric:tabular-nums}
+button{font:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--saffron);outline-offset:2px}
+
+/* dashboard */
+.dash{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center}
+.ring{position:relative;width:128px;height:128px}
+.ring svg{transform:rotate(-90deg)}
+.ring .c{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring b{font-family:var(--display);font-size:1.6rem;line-height:1}
+.ring small{color:var(--muted);font-size:.78rem}
+.dash-r{display:flex;flex-direction:column;gap:12px;min-width:0}
+.slots{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.slot{border:1px dashed var(--line);border-radius:10px;padding:8px 12px;min-width:0}
+.slot.on{border-style:solid;background:var(--olive-soft)}
+.slot .lbl{font-size:.75rem;color:var(--muted);letter-spacing:.02em}
+.slot .nm{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.slot button{background:none;border:0;color:var(--sumac);padding:0;font-size:.8rem}
+.macros{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.mac .t{display:flex;justify-content:space-between;font-size:.82rem;color:var(--muted)}
+.mac .t b{color:var(--ink)}
+.bar{height:7px;border-radius:4px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:4px;transition:width .3s}
+.tgt{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:.85rem;color:var(--muted)}
+.tgt input{width:80px;padding:4px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);font:inherit}
+.actions{display:flex;flex-wrap:wrap;gap:8px}
+.btn{border:1px solid var(--olive);background:var(--olive);color:var(--surface);border-radius:999px;padding:6px 14px;font-weight:600;font-size:.88rem}
+.btn.ghost{background:transparent;color:var(--olive)}
+
+/* tabs & filters */
+.bar2{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center}
+.tabs{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px}
+.tabs button{border:0;background:none;border-radius:999px;padding:6px 18px;color:var(--muted);font-weight:600}
+.tabs button[aria-selected="true"]{background:var(--olive);color:var(--surface)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:4px 12px;font-size:.85rem}
+.chip[aria-pressed="true"]{border-color:var(--saffron);background:var(--saffron);color:#1f1a0e}
+
+/* cards */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;text-align:start;color:var(--ink);display:flex;flex-direction:column;gap:8px;transition:border-color .15s,transform .15s}
+.card:hover{border-color:var(--olive);transform:translateY(-1px)}
+.card.picked{border-color:var(--olive);box-shadow:inset 0 0 0 1px var(--olive)}
+.card h3{font-size:1.02rem}
+.card .meta{display:flex;justify-content:space-between;align-items:baseline;font-size:.85rem;color:var(--muted)}
+.kcal{font-family:var(--display);font-size:1.15rem;color:var(--olive)}
+.tags{display:flex;flex-wrap:wrap;gap:4px}
+.tag{font-size:.72rem;padding:1px 8px;border-radius:999px;background:var(--olive-soft);color:var(--olive)}
+.tag.q{background:transparent;border:1px solid var(--saffron);color:var(--saffron)}
+.pk{font-size:.75rem;color:var(--olive);font-weight:600}
+.empty{color:var(--muted);padding:20px;text-align:center;grid-column:1/-1}
+
+/* sheet */
+.overlay{position:fixed;inset:0;background:rgba(10,14,8,.45);z-index:20;display:flex;justify-content:center;align-items:flex-end}
+.sheet{background:var(--surface);width:100%;max-width:720px;max-height:92%;overflow:auto;border-radius:16px 16px 0 0;padding:20px max(18px,env(safe-area-inset-left,0px)) calc(24px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px}
+@media (min-width:760px){.overlay{align-items:center}.sheet{border-radius:16px;max-height:88%}}
+.sh-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.x{border:0;background:var(--olive-soft);color:var(--ink);width:34px;height:34px;border-radius:50%;flex:none;font-size:1.1rem}
+.facts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.fact{background:var(--bg);border-radius:10px;padding:8px;text-align:center}
+.fact b{display:block;font-family:var(--display);font-size:1.1rem}
+.fact span{font-size:.75rem;color:var(--muted)}
+.serv{display:flex;align-items:center;gap:10px;font-size:.9rem}
+.serv button{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--bg);color:var(--ink)}
+h4{font-family:var(--display);margin:0 0 6px;font-size:.95rem}
+ul.ing{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:1fr 1fr;gap:4px 16px}
+ul.ing li{display:flex;justify-content:space-between;gap:8px;border-bottom:1px dotted var(--line);padding:3px 0;font-size:.92rem}
+ul.ing li b{font-weight:600;white-space:nowrap}
+ol.steps{margin:0;padding-inline-start:20px;display:flex;flex-direction:column;gap:6px}
+.tip{background:var(--olive-soft);border-radius:10px;padding:10px 12px;font-size:.88rem}
+.note{font-size:.8rem;color:var(--muted)}
+textarea{width:100%;min-height:200px;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--bg);color:var(--ink);font:inherit;box-sizing:border-box}
+.toast{position:fixed;bottom:calc(20px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 16px;border-radius:999px;z-index:30;font-size:.88rem}
+
+@media (max-width:560px){
+  .dash{grid-template-columns:1fr;justify-items:center}
+  .dash-r{width:100%}
+  ul.ing{grid-template-columns:1fr}
+  .facts{grid-template-columns:repeat(2,1fr)}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+</head>
+<body>
+<div class="wrap" dir="rtl">
+  <header>
+    <h1>مطبخ البيت الصحي</h1>
+    <p class="sub">اختاري فطور وغداء وعشاء اليوم، وبتطلعلك المكونات وطريقة التحضير والسعرات. القيم للحصة الواحدة وتقريبية.</p>
+  </header>
+
+  <section class="dash" aria-label="لوحة اليوم">
+    <div class="ring" id="ring"></div>
+    <div class="dash-r">
+      <div class="slots" id="slots"></div>
+      <div class="macros" id="macros"></div>
+      <div class="tgt">
+        <label for="target">هدف سعرات الوجبات الثلاث للشخص:</label>
+        <input id="target" type="number" min="400" max="3000" step="50" value="1500" class="num">
+        <span>سعرة</span>
+      </div>
+      <div class="actions">
+        <button class="btn" id="surprise">اقترحي عليّ يومي</button>
+        <button class="btn ghost" id="shop">قائمة المشتريات</button>
+        <button class="btn ghost" id="clear">مسح الاختيار</button>
+      </div>
+    </div>
+  </section>
+
+  <div class="bar2">
+    <div class="tabs" role="tablist">
+      <button role="tab" id="tab-breakfast" aria-selected="true" data-t="breakfast">الفطور</button>
+      <button role="tab" id="tab-lunch" aria-selected="false" data-t="lunch">الغداء</button>
+      <button role="tab" id="tab-dinner" aria-selected="false" data-t="dinner">العشاء</button>
+    </div>
+    <div class="chips" id="chips">
+      <button class="chip" id="f-quick" aria-pressed="false" data-f="quick">سريع (٣٠ د أو أقل)</button>
+      <button class="chip" id="f-prot" aria-pressed="false" data-f="prot">بروتين عالي</button>
+      <button class="chip" id="f-light" aria-pressed="false" data-f="light">خفيف</button>
+      <button class="chip" id="f-veg" aria-pressed="false" data-f="veg">نباتي</button>
+    </div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+  <p class="note">السعرات محسوبة تقريبياً للحصة باستخدام دجاج بدون جلد، لحم قليل الدهن، وزيت زيتون بالملعقة بدل القلي. أي إضافة زيت أو سمنة بترفع الرقم.</p>
+</div>
+
+<div id="layer"></div>
+
+<script>
+const MEALS=[
+// ---------- فطور ----------
+{id:"b1",t:"breakfast",n:"شوفان باللبن والفواكه",min:10,k:340,p:20,c:50,f:8,veg:1,
+ ing:[[2,"كوب","شوفان"],[2,"كوب","لبن يوناني قليل الدسم"],[1,"كوب","حليب قليل الدسم"],[2,"حبة","موز"],[1,"كوب","فراولة أو توت"],[2,"م.ك","بذور شيا"],[1,"م.ك","عسل"],[null,"","قرفة"]],
+ st:["اخلطي الشوفان مع الحليب واللبن والشيا والقرفة.","وزّعيه بكاسات أو مرطبانات وحطيه بالثلاجة من الليل.","الصبح زيّنيه بالموز والفراولة ونقطة عسل."],
+ tip:"بيتجهز من الليل، فالصبح بس بتطلعيه من الثلاجة. مناسب كمان قبل الجيم بساعة."},
+{id:"b2",t:"breakfast",n:"بيض مخفوق بالسبانخ والفطر",min:15,k:290,p:20,c:18,f:16,veg:1,
+ ing:[[8,"حبة","بيض"],[2,"كوب","سبانخ"],[250,"غ","فطر"],[1,"حبة","بصل صغير"],[1,"م.ك","زيت زيتون"],[2,"رغيف","خبز أسمر"],[null,"","ملح وفلفل"]],
+ st:["شوّحي البصل والفطر بملعقة الزيت ٥ دقائق.","أضيفي السبانخ حتى تذبل.","اسكبي البيض المخفوق مع الملح وقلّبي على نار هادئة حتى يتماسك.","قدّميه مع الخبز الأسمر."],
+ tip:"البيض بالصبح بيعطي شبع طويل ويخفف الرغبة بالسناكات خلال الدوام."},
+{id:"b3",t:"breakfast",n:"فول مدمس صحي",min:15,k:330,p:17,c:46,f:8,veg:1,
+ ing:[[2,"علبة","فول مدمس"],[2,"حبة","ليمون"],[3,"فص","ثوم"],[1,"م.ص","كمون"],[1,"م.ك","زيت زيتون"],[2,"حبة","بندورة"],[0.5,"حزمة","بقدونس"],[2,"رغيف","خبز أسمر"],[null,"","ملح وفلفل حار"]],
+ st:["سخّني الفول مع مايته ٥ دقائق.","اهرسيه جزئياً واخلطيه مع الثوم المدقوق والليمون والكمون والملح.","زيّنيه بالبندورة والبقدونس، ورشّي ملعقة الزيت بس فوق الصحن كله."],
+ tip:"الفول مليان ألياف وبروتين نباتي. السر بكمية الزيت، ملعقة وحدة للصحن كله بتكفي."},
+{id:"b4",t:"breakfast",n:"توست أسمر بالأفوكادو والبيض",min:15,k:330,p:16,c:28,f:17,veg:1,
+ ing:[[4,"شريحة","توست أسمر"],[1,"حبة","أفوكادو"],[4,"حبة","بيض"],[1,"كوب","بندورة كرزية"],[1,"حبة","ليمون"],[null,"","ملح وفلفل حب"]],
+ st:["اسلقي البيض ٧ دقائق أو اعمليه عيون بمقلاة لا تلتصق بدون زيت.","اهرسي الأفوكادو مع الليمون والملح.","حمّصي التوست، وادهنيه بالأفوكادو، وحطي فوقه البيض والبندورة."],
+ tip:"دهون الأفوكادو صحية بس سعراتها عالية، نص حبة لشخصين كافية."},
+{id:"b5",t:"breakfast",n:"سموذي موز وزبدة فول سوداني",min:5,k:320,p:18,c:42,f:9,veg:1,
+ ing:[[3,"كوب","حليب قليل الدسم"],[2,"حبة","موز"],[2,"م.ك","زبدة فول سوداني"],[0.5,"كوب","شوفان"],[1,"كوب","لبن يوناني"],[null,"","قرفة وثلج"]],
+ st:["حطي كل المكونات بالخلاط.","اخلطيها دقيقة حتى تصير ناعمة، وقدّميها فوراً."],
+ tip:"ممتاز بعد التمرين الصبح، وبيعطي طعم حلو بدون سكر مضاف."},
+{id:"b6",t:"breakfast",n:"بان كيك الشوفان بالموز",min:20,k:310,p:13,c:48,f:8,veg:1,
+ ing:[[1.5,"كوب","شوفان"],[2,"حبة","موز ناضج"],[3,"حبة","بيض"],[0.5,"كوب","حليب قليل الدسم"],[1,"م.ص","بيكنج باودر"],[1,"م.ص","قرفة"],[1,"م.ك","عسل"],[null,"","فواكه للتزيين"]],
+ st:["اطحني الشوفان بالخلاط، وبعدين أضيفي الموز والبيض والحليب والبيكنج باودر والقرفة.","سخّني مقلاة لا تلتصق على نار متوسطة، وصبّي ربع كوب من الخليط لكل قرص.","اقلبيه لما تطلع فقاعات على الوجه، وقدّميه مع الفواكه ونقطة عسل."],
+ tip:"بديل حلو وصحي لمحبي الحلويات، بدون طحين أبيض ولا سكر."},
+{id:"b7",t:"breakfast",n:"مناقيش زعتر بخبز أسمر",min:15,k:350,p:12,c:45,f:14,veg:1,
+ ing:[[4,"رغيف","خبز أسمر صغير"],[3,"م.ك","زعتر"],[2,"م.ك","زيت زيتون"],[2,"حبة","خيار"],[2,"حبة","بندورة"],[0.5,"حزمة","نعنع"],[1,"كوب","لبن قليل الدسم"]],
+ st:["اخلطي الزعتر مع الزيت لعجينة خفيفة.","ادهني الخبز بطبقة رقيقة.","ادخليه الفرن ٥–٧ دقائق على ٢٠٠°.","قدّميه مع الخضار والنعنع وكاسة لبن."],
+ tip:"طعم المناقيش بنص سعراتها، لأن الخبز رقيق والزيت مقاس بالملعقة."},
+// ---------- غداء ----------
+{id:"l1",t:"lunch",n:"دجاج بالليمون والثوم مع برغل",min:50,k:520,p:45,c:52,f:14,
+ ing:[[700,"غ","صدر دجاج"],[1.5,"كوب","برغل خشن"],[2,"حبة","ليمون"],[5,"فص","ثوم"],[1,"حبة","بصل"],[2,"م.ك","زيت زيتون"],[1,"م.ص","بابريكا"],[1,"م.ص","كمون"],[3,"كوب","مرق أو ماء"],[2,"حبة","خيار"],[3,"حبة","بندورة"],[null,"","ملح وفلفل"]],
+ st:["قطّعي الدجاج وتبّليه بعصير الليمون والثوم المهروس والبابريكا والكمون ونصف ملعقة زيت، واتركيه ٣٠ دقيقة.","اشوي الدجاج بالفرن على ٢٢٠° لمدة ٢٠–٢٥ دقيقة حتى يتحمّر.","شوّحي البصل بملعقة زيت، أضيفي البرغل وقلّبي دقيقة، ثم المرق والملح. غطّي واتركيه على نار هادئة ١٥ دقيقة.","قطّعي الخيار والبندورة سلطة مع ليمون ورشة ملح."],
+ tip:"اللون الذهبي بييجي من الفرن مش من الزيت، فما في داعي تزيدي زيت."},
+{id:"l2",t:"lunch",n:"مقلوبة زهرة مشوية بالدجاج",min:75,k:560,p:40,c:60,f:16,
+ ing:[[1,"رأس","زهرة متوسط"],[600,"غ","صدر دجاج"],[1.5,"كوب","أرز بسمتي"],[1,"حبة","بصل"],[4,"فص","ثوم"],[2,"م.ك","زيت زيتون"],[1.5,"م.ص","بهارات مقلوبة"],[3,"كوب","مرق الدجاج"],[null,"","ملح"]],
+ st:["قطّعي الزهرة، ادهنيها بملعقة زيت ورشة ملح، واشويها بالفرن ٢٥ دقيقة على ٢٢٠° بدل القلي.","اسلقي الدجاج مع البصل والبهارات حتى ينضج، واحتفظي بالمرق.","اغسلي الأرز وانقعيه ١٥ دقيقة.","بالطنجرة صفّي الدجاج ثم الزهرة والثوم ثم الأرز، واسكبي المرق حتى يغطي الأرز بإصبع.","اطبخيها على نار هادئة ٣٠ دقيقة، واتركيها ١٠ دقائق قبل القلب."],
+ tip:"قدّميها مع لبن قليل الدسم أو سلطة بدل الصنوبر المقلي."},
+{id:"l3",t:"lunch",n:"سمك بالفرن مع خضار وأرز بني",min:45,k:470,p:40,c:44,f:13,
+ ing:[[800,"غ","فيليه سمك أبيض"],[1,"كوب","أرز بني"],[2,"حبة","كوسا"],[2,"حبة","فلفل ملون"],[1,"حبة","بصل"],[1,"حزمة","كزبرة خضراء"],[4,"فص","ثوم"],[2,"حبة","ليمون"],[2,"م.ك","زيت زيتون"],[1,"م.ص","كمون"],[null,"","ملح وفلفل"]],
+ st:["اطبخي الأرز البني مع ٢.٥ كوب ماء لمدة ٣٥ دقيقة.","قطّعي الخضار شرائح، ادهنيها بملعقة زيت، واشويها بالصينية ٢٠ دقيقة على ٢٠٠°.","اخلطي الكزبرة والثوم والليمون والكمون وملعقة الزيت الثانية، وادهني فيها السمك.","حطي السمك فوق الخضار وارجعي الصينية للفرن ١٢–١٥ دقيقة."],
+ tip:"السمك جاهز لما يتفتت بالشوكة بسهولة. لا تزيدي الوقت حتى ما ينشف."},
+{id:"l4",t:"lunch",n:"مجدرة برغل مع لبن وسلطة",min:50,k:480,p:21,c:74,f:11,veg:1,
+ ing:[[1,"كوب","عدس بني"],[1,"كوب","برغل خشن"],[2,"حبة","بصل"],[2,"م.ك","زيت زيتون"],[1,"م.ص","كمون"],[2,"كوب","لبن قليل الدسم"],[2,"حبة","خيار"],[2,"حبة","بندورة"],[null,"","ملح"]],
+ st:["اسلقي العدس ٢٠ دقيقة حتى يقارب النضج.","قطّعي البصل شرائح، اخلطيه بملعقة زيت واشويه بالفرن حتى يتحمّر بدل القلي.","أضيفي البرغل والكمون والملح ونصف البصل للعدس، مع ماء يغطيهم، واطبخيها ١٥ دقيقة.","زيّنيها بباقي البصل وقدّميها مع اللبن والسلطة."],
+ tip:"وجبة نباتية مشبعة، والعدس مع البرغل بيعطوا بروتين كامل."},
+{id:"l5",t:"lunch",n:"كفتة بالبندورة بالفرن",min:60,k:520,p:38,c:38,f:23,
+ ing:[[600,"غ","لحم مفروم قليل الدهن"],[1,"حبة","بصل مبشور"],[1,"حزمة","بقدونس"],[5,"حبة","بندورة"],[2,"حبة","بطاطا متوسطة"],[1,"م.ك","رب بندورة"],[1,"م.ص","بهارات مشكلة"],[4,"رغيف","خبز أسمر صغير"],[null,"","ملح وفلفل"]],
+ st:["اخلطي اللحم مع البصل والبقدونس والبهارات والملح، وشكّليه أقراص.","صفّي شرائح البطاطا بالصينية، فوقها الكفتة، ثم شرائح البندورة.","ذوّبي رب البندورة بكوب ماء ساخن واسكبيه فوقها.","غطّيها بالقصدير واخبزيها ٣٠ دقيقة على ٢٠٠°، ثم اكشفيها ١٥ دقيقة."],
+ tip:"اختاري لحم مفروم ١٠٪ دهن أو أقل، الفرق بالسعرات واضح."},
+{id:"l6",t:"lunch",n:"فاصولياء خضراء باللحمة",min:70,k:460,p:30,c:48,f:14,
+ ing:[[750,"غ","فاصولياء خضراء"],[400,"غ","لحم قطع قليل الدهن"],[4,"حبة","بندورة"],[1,"حبة","بصل"],[5,"فص","ثوم"],[1,"م.ك","زيت زيتون"],[1,"كوب","أرز بني"],[null,"","ملح وبهارات"]],
+ st:["اسلقي اللحم مع البصل والبهارات حتى يطرى (حوالي ٤٥ دقيقة).","بطنجرة ثانية شوّحي الثوم بملعقة الزيت، أضيفي الفاصولياء وقلّبي ٥ دقائق.","أضيفي البندورة المبشورة واللحم مع كوب من مرقه، واطبخيها ٢٠ دقيقة.","قدّميها مع الأرز البني."],
+ tip:"ممكن تطبخيها بالطنجرة الضغط وتوفري نص الوقت."},
+{id:"l7",t:"lunch",n:"شيش طاووق بالفرن مع ثومية لبن",min:40,k:490,p:48,c:40,f:13,
+ ing:[[700,"غ","صدر دجاج مكعبات"],[0.5,"كوب","لبن"],[1,"م.ك","رب بندورة"],[6,"فص","ثوم"],[1,"حبة","ليمون"],[1,"م.ص","بابريكا"],[2,"حبة","فلفل ملون"],[1,"حبة","بصل"],[1,"كوب","لبن يوناني"],[4,"رغيف","خبز أسمر صغير"],[null,"","ملح"]],
+ st:["تبّلي الدجاج بنصف كوب لبن ورب البندورة و٣ فصوص ثوم والليمون والبابريكا والملح، واتركيه ساعة أو ليلة كاملة.","ادخلي الدجاج بالأسياخ مع الفلفل والبصل.","اشويه بالفرن على ٢٢٠° لمدة ٢٠ دقيقة، وقلّبيه بالنص.","للثومية: اخلطي اللبن اليوناني مع الثوم الباقي ورشة ملح."],
+ tip:"ثومية اللبن بديل ممتاز عن الثومية بالزيت، وتوفر أكثر من ٢٠٠ سعرة."},
+{id:"l8",t:"lunch",n:"ملوخية بالدجاج",min:60,k:470,p:42,c:44,f:12,
+ ing:[[800,"غ","ملوخية مفرّزة"],[700,"غ","صدر دجاج"],[8,"فص","ثوم"],[1,"م.ك","كزبرة ناشفة"],[1,"م.ك","زيت زيتون"],[2,"حبة","ليمون"],[1,"كوب","أرز"],[1,"حبة","بصل"],[null,"","ملح"]],
+ st:["اسلقي الدجاج مع البصل والملح، واحتفظي بالمرق.","شوّحي الثوم والكزبرة بملعقة الزيت حتى يفوح.","أضيفي الملوخية و٤ أكواب من المرق، واطبخيها ١٥ دقيقة بدون ما تغطيها.","أضيفي الدجاج المقطع، وقدّميها مع الأرز والليمون."],
+ tip:"خففي كمية الأرز وزيدي الملوخية، هي اللي بتشبع."},
+{id:"l9",t:"lunch",n:"بامية باللحمة",min:60,k:450,p:29,c:47,f:14,
+ ing:[[750,"غ","بامية مفرّزة"],[400,"غ","لحم قطع قليل الدهن"],[3,"كوب","عصير بندورة"],[6,"فص","ثوم"],[1,"م.ك","كزبرة ناشفة"],[1,"م.ك","زيت زيتون"],[1,"حبة","ليمون"],[1,"كوب","أرز بني"],[null,"","ملح"]],
+ st:["اسلقي اللحم حتى يطرى.","شوّحي الثوم والكزبرة بالزيت، ثم أضيفي البامية وقلّبي ٥ دقائق.","أضيفي عصير البندورة واللحم ونص كوب مرق، واطبخيها ٢٠ دقيقة.","اعصري الليمون بالآخر وقدّميها مع الأرز."],
+ tip:"قلّبي البامية بالفرن ١٠ دقائق قبل الطبخ بدل قليها، حتى ما تمطّ."},
+{id:"l10",t:"lunch",n:"صينية دجاج وخضار بالفرن",min:50,k:450,p:40,c:38,f:14,
+ ing:[[700,"غ","صدر أو فخذ دجاج بدون جلد"],[3,"حبة","بطاطا متوسطة"],[3,"حبة","جزر"],[2,"حبة","كوسا"],[1,"حبة","بصل"],[2,"م.ك","زيت زيتون"],[1,"م.ص","بهارات دجاج"],[1,"م.ص","زعتر ناشف"],[null,"","ملح وفلفل"]],
+ st:["قطّعي الخضار مكعبات كبيرة والدجاج قطع.","اخلطي الكل مع الزيت والبهارات والزعتر والملح.","افرديهم بصينية واسعة وادخليها الفرن على ٢٢٠° لمدة ٤٠ دقيقة، وقلّبيها مرة."],
+ tip:"أسهل طبخة للأيام المزحومة، صينية وحدة وبدون جلي كثير."},
+// ---------- عشاء ----------
+{id:"d1",t:"dinner",n:"شكشوكة بالخضار",min:20,k:330,p:17,c:27,f:17,veg:1,
+ ing:[[6,"حبة","بيض"],[5,"حبة","بندورة"],[2,"حبة","فلفل ملون"],[1,"حبة","بصل"],[2,"فص","ثوم"],[1,"م.ك","زيت زيتون"],[1,"م.ص","كمون"],[2,"رغيف","خبز أسمر"],[null,"","ملح وفلفل"]],
+ st:["شوّحي البصل والفلفل بملعقة الزيت ٥ دقائق.","أضيفي الثوم والبندورة المقطعة والكمون والملح، واطبخيها ١٠ دقائق.","اعملي حفر واكسري البيض فيها، غطّيها ٥ دقائق."],
+ tip:"إذا بدك بروتين أكثر، زيدي بيضة أو حطي جبنة بيضاء قليلة الملح."},
+{id:"d2",t:"dinner",n:"سلطة تونة بالحمص",min:15,k:360,p:33,c:30,f:11,
+ ing:[[3,"علبة","تونة بالماء"],[1.5,"كوب","حمص مسلوق"],[1,"رأس","خس"],[2,"حبة","خيار"],[2,"حبة","بندورة"],[0.5,"كوب","ذرة"],[1,"حبة","ليمون"],[1,"م.ك","زيت زيتون"],[null,"","ملح وسماق"]],
+ st:["صفّي التونة والحمص.","قطّعي الخضار واخلطيها مع التونة والحمص والذرة.","تبّليها بالليمون والزيت والملح والسماق."],
+ tip:"اختاري التونة بالماء مش بالزيت، الفرق حوالي ١٠٠ سعرة للعلبة."},
+{id:"d3",t:"dinner",n:"فتة حمص خفيفة",min:20,k:390,p:19,c:48,f:13,veg:1,
+ ing:[[2,"كوب","حمص مسلوق"],[2,"كوب","لبن قليل الدسم"],[2,"م.ك","طحينة"],[2,"فص","ثوم"],[1,"حبة","ليمون"],[2,"رغيف","خبز أسمر"],[1,"م.ص","كمون"],[null,"","بقدونس وبابريكا للتزيين"]],
+ st:["قطّعي الخبز مربعات وحمّصيه بالفرن بدل القلي.","سخّني الحمص مع شوية من مايته والكمون.","اخلطي اللبن والطحينة والثوم والليمون.","صفّي الخبز ثم الحمص ثم صلصة اللبن، وزيّنيها."],
+ tip:"وجبة دافية ومشبعة، والخبز المحمص بالفرن بيعطي نفس القرمشة."},
+{id:"d4",t:"dinner",n:"دجاج مشوي مع فتوش",min:30,k:380,p:36,c:26,f:14,
+ ing:[[500,"غ","صدر دجاج"],[1,"رأس","خس"],[2,"حبة","خيار"],[3,"حبة","بندورة"],[5,"حبة","فجل"],[0.5,"حزمة","نعنع"],[1,"رغيف","خبز أسمر"],[1,"م.ك","دبس رمان"],[2,"م.ك","زيت زيتون"],[1,"م.ص","سماق"],[null,"","ملح وليمون"]],
+ st:["تبّلي الدجاج بالملح والليمون وشوية بهارات، واشويه على المقلاة أو الفرن ١٥ دقيقة.","حمّصي الخبز بالفرن.","قطّعي الخضار، وتبّليها بدبس الرمان والزيت والسماق والليمون.","قدّمي الدجاج شرائح فوق الفتوش."],
+ tip:""},
+{id:"d5",t:"dinner",n:"صحن بيض ولبنة وخضار",min:15,k:360,p:24,c:26,f:18,veg:1,
+ ing:[[8,"حبة","بيض"],[1,"كوب","لبنة قليلة الدسم"],[2,"حبة","خيار"],[3,"حبة","بندورة"],[2,"م.ك","زعتر"],[1,"م.ك","زيت زيتون"],[2,"رغيف","خبز أسمر"],[null,"","زيتون حسب الرغبة"]],
+ st:["اسلقي البيض ١٠ دقائق.","رتّبي اللبنة والخضار والزعتر بصحن.","رشّي الزيت فوق اللبنة بس، وقدّميها مع الخبز."],
+ tip:"عشاء أهل الشام الكلاسيكي، بس انتبهي لكمية الزيت والزعتر."},
+{id:"d6",t:"dinner",n:"شوربة عدس مع سلطة",min:35,k:300,p:17,c:48,f:5,veg:1,
+ ing:[[1.5,"كوب","عدس أحمر"],[1,"حبة","بصل"],[2,"حبة","جزر"],[1,"م.ك","زيت زيتون"],[1.5,"م.ص","كمون"],[6,"كوب","ماء أو مرق"],[1,"حبة","ليمون"],[null,"","سلطة خضراء جانبية"],[null,"","ملح"]],
+ st:["شوّحي البصل والجزر المقطع بملعقة الزيت.","أضيفي العدس المغسول والماء والكمون، واطبخيها ٢٥ دقيقة.","اهرسيها بالخلاط، وقدّميها مع الليمون والسلطة."],
+ tip:"قدّميها مع خبز محمص بالفرن بدل الخبز المقلي."},
+{id:"d7",t:"dinner",n:"عجة بالخضار بالفرن",min:30,k:300,p:20,c:12,f:18,veg:1,
+ ing:[[8,"حبة","بيض"],[1,"حزمة","بقدونس"],[4,"عود","بصل أخضر"],[1,"حبة","كوسا مبشورة"],[2,"م.ك","طحين"],[1,"م.ك","زيت زيتون"],[1,"م.ص","بهارات"],[1,"كوب","لبن قليل الدسم"],[null,"","ملح"]],
+ st:["اخفقي البيض مع الطحين والبهارات والملح.","أضيفي البقدونس والبصل والكوسا المعصورة من مايتها.","ادهني صينية بملعقة الزيت واسكبي الخليط.","اخبزيها ٢٠ دقيقة على ١٨٠°، وقدّميها مع اللبن."],
+ tip:"العجة بالفرن بتشرب زيت أقل بكثير من المقلية."},
+{id:"d8",t:"dinner",n:"تبولة مع دجاج مشوي",min:30,k:370,p:34,c:24,f:15,
+ ing:[[3,"حزمة","بقدونس"],[0.5,"كوب","برغل ناعم"],[4,"حبة","بندورة"],[0.5,"حزمة","نعنع"],[2,"حبة","ليمون"],[2,"م.ك","زيت زيتون"],[500,"غ","صدر دجاج"],[null,"","ملح وبهارات"]],
+ st:["انقعي البرغل بعصير الليمون ١٥ دقيقة.","افرمي البقدونس والنعنع ناعم وقطّعي البندورة.","تبّلي الدجاج واشويه ١٥ دقيقة.","اخلطي التبولة بالزيت والملح وقدّميها مع الدجاج."],
+ tip:"التبولة بتعبي الصحن بسعرات قليلة، والدجاج بيكمل البروتين."}
+];
+
+const $=s=>document.querySelector(s);
+const S={tab:"breakfast",f:new Set(),pick:{breakfast:null,lunch:null,dinner:null},target:1500};
+const NAME={breakfast:"فطور",lunch:"غداء",dinner:"عشاء"},FOR={breakfast:"لفطور",lunch:"لغداء",dinner:"لعشاء"},ORDER=["breakfast","lunch","dinner"];
+try{const s=JSON.parse(localStorage.getItem("hk-state-v2")||"{}");if(s.pick)S.pick=Object.assign(S.pick,s.pick);if(s.target)S.target=s.target;}catch(e){}
+const save=()=>{try{localStorage.setItem("hk-state-v2",JSON.stringify({pick:S.pick,target:S.target}))}catch(e){}};
+const AR=n=>n.toLocaleString("ar-EG");
+const get=id=>MEALS.find(m=>m.id===id);
+const tagsOf=m=>{const t=[];if(m.min<=30)t.push("quick");if(m.p>=35)t.push("prot");if(m.k<=380)t.push("light");if(m.veg)t.push("veg");return t};
+const TN={quick:"سريع",prot:"بروتين عالي",light:"خفيف",veg:"نباتي"};
+
+function fmtQ(q,unit){
+  if(q==null)return "حسب الرغبة";
+  let v;
+  if(unit==="غ"){v=Math.round(q/25)*25;if(v>=1000)return AR(+(v/1000).toFixed(2))+" كغ";return AR(v)+" غ"}
+  const r=Math.round(q*4)/4,w=Math.floor(r),fr=r-w;
+  const fs={0.25:"¼",0.5:"½",0.75:"¾"}[fr]||"";
+  v=(w?AR(w):"")+(fs?(w?" و":"")+fs:"");
+  return (v||"¼")+" "+unit;
+}
+
+function renderDash(){
+  const sel=ORDER.map(t=>get(S.pick[t])).filter(Boolean);
+  const k=sel.reduce((a,m)=>a+m.k,0),p=sel.reduce((a,m)=>a+m.p,0),c=sel.reduce((a,m)=>a+m.c,0),f=sel.reduce((a,m)=>a+m.f,0);
+  const pct=Math.min(k/S.target,1.2),over=k>S.target;
+  const R=54,C=2*Math.PI*R;
+  $("#ring").innerHTML=`<svg width="128" height="128" viewBox="0 0 128 128"><circle cx="64" cy="64" r="${R}" fill="none" stroke="var(--line)" stroke-width="12"/><circle cx="64" cy="64" r="${R}" fill="none" stroke="${over?"var(--sumac)":"var(--olive)"}" stroke-width="12" stroke-linecap="round" stroke-dasharray="${C*Math.min(pct,1)} ${C}"/></svg><div class="c"><b class="num">${AR(k)}</b><small>من ${AR(S.target)} سعرة</small><small style="color:${over?"var(--sumac)":"var(--olive)"}">${k?(over?"أعلى من الهدف":"ضمن الهدف"):"لم تختاري بعد"}</small></div>`;
+  const slot=(lbl,m,t)=>`<div class="slot ${m?"on":""}"><div class="lbl">${lbl}</div><div class="nm">${m?m.n:"—"}</div>${m?`<button data-rm="${t}">إزالة</button> · <button data-open="${m.id}">الوصفة</button>`:""}</div>`;
+  $("#slots").innerHTML=ORDER.map(t=>slot(NAME[t]+" اليوم",get(S.pick[t]),t)).join("");
+  const mac=(n,v,max,col)=>`<div class="mac"><div class="t"><span>${n}</span><b class="num">${AR(v)} غ</b></div><div class="bar"><i style="width:${Math.min(v/max*100,100)}%;background:${col}"></i></div></div>`;
+  $("#macros").innerHTML=mac("بروتين",p,120,"var(--olive)")+mac("كربوهيدرات",c,180,"var(--saffron)")+mac("دهون",f,60,"var(--water)");
+}
+
+function renderGrid(){
+  const list=MEALS.filter(m=>m.t===S.tab&&[...S.f].every(x=>tagsOf(m).includes(x)));
+  $("#grid").innerHTML=list.length?list.map(m=>{
+    const picked=S.pick[m.t]===m.id;
+    return `<button class="card ${picked?"picked":""}" data-open="${m.id}">
+      <h3>${m.n}</h3>
+      <div class="meta"><span class="kcal num">${AR(m.k)} <small style="font-size:.7em">سعرة</small></span><span class="num">${AR(m.min)} دقيقة</span></div>
+      <div class="tags">${tagsOf(m).map(t=>`<span class="tag ${t==="quick"?"q":""}">${TN[t]}</span>`).join("")}</div>
+      ${picked?`<span class="pk">✓ مختارة لليوم</span>`:""}
+    </button>`}).join(""):`<div class="empty">ما في وجبات بهاي الفلاتر، جربي تشيلي فلتر.</div>`;
+}
+
+let serv=4;
+function openMeal(id){
+  const m=get(id);serv=4;
+  const draw=()=>{
+    const r=serv/4,picked=S.pick[m.t]===m.id;
+    $("#layer").innerHTML=`<div class="overlay" data-close="1"><div class="sheet" role="dialog" aria-label="${m.n}" dir="rtl">
+      <div class="sh-top"><div><div class="note">${NAME[m.t]} · ${AR(m.min)} دقيقة</div><h2>${m.n}</h2></div><button class="x" data-close="1" aria-label="إغلاق">×</button></div>
+      <div class="facts">
+        <div class="fact"><b class="num" style="color:var(--olive)">${AR(m.k)}</b><span>سعرة / حصة</span></div>
+        <div class="fact"><b class="num">${AR(m.p)} غ</b><span>بروتين</span></div>
+        <div class="fact"><b class="num">${AR(m.c)} غ</b><span>كربوهيدرات</span></div>
+        <div class="fact"><b class="num">${AR(m.f)} غ</b><span>دهون</span></div>
+      </div>
+      <div class="serv"><span>عدد الحصص:</span><button id="sm" aria-label="أقل">−</button><b class="num">${AR(serv)}</b><button id="sp" aria-label="أكثر">+</button><span class="note">الكميات بتتغير تلقائياً</span></div>
+      <div><h4>المكونات</h4><ul class="ing">${m.ing.map(([q,u,n])=>`<li><span>${n}</span><b class="num">${fmtQ(q==null?null:q*r,u)}</b></li>`).join("")}</ul></div>
+      <div><h4>طريقة التحضير</h4><ol class="steps">${m.st.map(s=>`<li>${s}</li>`).join("")}</ol></div>
+      ${m.tip?`<div class="tip">${m.tip}</div>`:""}
+      <div class="actions"><button class="btn" id="pickbtn">${picked?"✓ مختارة "+FOR[m.t]+" اليوم":"اختاريها "+FOR[m.t]+" اليوم"}</button></div>
+    </div></div>`;
+    $("#sm").onclick=()=>{if(serv>1){serv--;draw()}};
+    $("#sp").onclick=()=>{if(serv<10){serv++;draw()}};
+    $("#pickbtn").onclick=()=>{S.pick[m.t]=m.id;save();renderAll();toast("تمت الإضافة "+FOR[m.t]+" اليوم");close()};
+  };
+  draw();
+}
+const close=()=>{$("#layer").innerHTML=""};
+
+function shopping(){
+  const sel=ORDER.map(t=>get(S.pick[t])).filter(Boolean);
+  if(!sel.length){toast("اختاري وجبة أول");return}
+  const map=new Map(),extra=[];
+  sel.forEach(m=>m.ing.forEach(([q,u,n])=>{if(q==null){extra.push(n);return}const k=n+"|"+u;map.set(k,(map.get(k)||0)+q)}));
+  const lines=[...map].map(([k,q])=>{const [n,u]=k.split("|");return "• "+n+": "+fmtQ(q,u)});
+  [...new Set(extra)].forEach(n=>lines.push("• "+n));
+  const txt="قائمة مشتريات اليوم (٤ حصص لكل وجبة)\n"+sel.map(m=>NAME[m.t]+": "+m.n).join("\n")+"\n\n"+lines.join("\n");
+  $("#layer").innerHTML=`<div class="overlay" data-close="1"><div class="sheet" dir="rtl">
+    <div class="sh-top"><h2>قائمة المشتريات</h2><button class="x" data-close="1" aria-label="إغلاق">×</button></div>
+    <textarea id="shoptxt" readonly>${txt}</textarea>
+    <div class="actions"><button class="btn" id="copy">نسخ القائمة</button></div></div></div>`;
+  $("#copy").onclick=()=>{const t=$("#shoptxt");navigator.clipboard.writeText(txt).then(()=>toast("تم النسخ")).catch(()=>{t.focus();t.select();toast("القائمة محددة، انسخيها يدوياً")})};
+}
+
+function toast(m){const d=document.createElement("div");d.className="toast";d.textContent=m;document.body.appendChild(d);setTimeout(()=>d.remove(),1800)}
+function renderAll(){renderDash();renderGrid()}
+
+document.addEventListener("click",e=>{
+  const o=e.target.closest("[data-open]");if(o){openMeal(o.dataset.open);return}
+  const rm=e.target.closest("[data-rm]");if(rm){S.pick[rm.dataset.rm]=null;save();renderAll();return}
+  if(e.target.dataset.close){close();return}
+  const tb=e.target.closest("[data-t]");if(tb){S.tab=tb.dataset.t;document.querySelectorAll("[data-t]").forEach(b=>b.setAttribute("aria-selected",b===tb));renderGrid();return}
+  const ch=e.target.closest("[data-f]");if(ch){const f=ch.dataset.f;S.f.has(f)?S.f.delete(f):S.f.add(f);ch.setAttribute("aria-pressed",S.f.has(f));renderGrid();return}
+});
+document.addEventListener("keydown",e=>{if(e.key==="Escape")close()});
+$("#target").value=S.target;
+$("#target").addEventListener("input",e=>{const v=+e.target.value;if(v>=400){S.target=v;save();renderDash()}});
+$("#surprise").onclick=()=>{
+  const pickR=(t,max)=>{const a=MEALS.filter(m=>m.t===t&&m.k<=max);return a[Math.floor(Math.random()*a.length)]};
+  let B,L,D,n=0;do{B=pickR("breakfast",9999);L=pickR("lunch",9999);D=pickR("dinner",9999);n++}while(B.k+L.k+D.k>S.target&&n<60);
+  S.pick={breakfast:B.id,lunch:L.id,dinner:D.id};save();renderAll();toast("تم اختيار وجبات اليوم");
+};
+$("#clear").onclick=()=>{S.pick={breakfast:null,lunch:null,dinner:null};save();renderAll()};
+$("#shop").onclick=shopping;
+if(!S.pick.breakfast&&!S.pick.lunch&&!S.pick.dinner)S.pick={breakfast:"b1",lunch:"l1",dinner:"d2"};
+renderAll();
+if("serviceWorker" in navigator){navigator.serviceWorker.register("sw.js").catch(()=>{})}
+</script>
+</body>
+</html>
